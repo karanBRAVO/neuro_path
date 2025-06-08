@@ -4,6 +4,8 @@ project(NeuroPath)
 
 set(CMAKE_CXX_STANDARD 17)
 
+message(STATUS "Root directory: ${CMAKE_CURRENT_SOURCE_DIR}")
+
 if(DEFINED ENV{VCPKG_ROOT} AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
         CACHE STRING "")
@@ -25,7 +27,20 @@ if(DEFINED ENV{VCPKG_ROOT})
 endif()
 
 find_package(raylib CONFIG REQUIRED)
+message(STATUS "Using raylib version: ${raylib_VERSION}")
 
-add_executable(NeuroPath main.cpp)
+set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
+file(GLOB_RECURSE SOURCES
+    "${SRC_DIR}/main.cpp"
+    "${SRC_DIR}/maze-generator/*.cpp"
+)
+
+add_executable(NeuroPath ${SOURCES})
+
+target_include_directories(NeuroPath PRIVATE
+    "${SRC_DIR}"
+    "${SRC_DIR}/maze-generator"
+    "${SRC_DIR}/utils"
+)
 
 target_link_libraries(NeuroPath PRIVATE raylib)
