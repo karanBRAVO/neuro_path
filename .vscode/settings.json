@@ -4,6 +4,8 @@
   "files.associations": {
     "vector": "cpp",
     "memory": "cpp",
-    "stack": "cpp"
+    "stack": "cpp",
+    "optional": "cpp",
+    "random": "cpp"
   }
 }

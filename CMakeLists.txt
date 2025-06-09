@@ -33,6 +33,7 @@ set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 file(GLOB_RECURSE SOURCES
     "${SRC_DIR}/main.cpp"
     "${SRC_DIR}/maze-generator/*.cpp"
+    "${SRC_DIR}/utils/*.cpp"
 )
 
 add_executable(NeuroPath ${SOURCES})

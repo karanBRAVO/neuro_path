@@ -11,7 +11,7 @@ MazeGenerator::MazeGenerator(int width, int height)
 }
 
 void MazeGenerator::generate() {
-  dfs();
+  dfs();  // Start the depth-first search to generate the maze
 }
 
 void MazeGenerator::dfs() {
@@ -28,6 +28,7 @@ void MazeGenerator::dfs() {
     for (auto& direction : directions) {
       int nx = current->x + direction.first;   // x-coordinate of the neighbor
       int ny = current->y + direction.second;  // y-coordinate of the neighbor
+
       // Check if the neighbor is within bounds
       if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
         Node* neighbor = grid[ny * COLS + nx].get();  // get the neighbor node (2D to 1D index)
@@ -60,18 +61,18 @@ void MazeGenerator::removeWall(Node* a, Node* b) {
   int dy = b->y - a->y;
 
   if (dx == 1) {          // b is to the right of a
-    a->walls[1] = false;  // Remove right wall of a
-    b->walls[3] = false;  // Remove left wall of b
+    a->walls[1] = false;  // right wall
+    b->walls[3] = false;  // left wall
   } else if (dx == -1) {  // b is to the left of a
-    a->walls[3] = false;  // Remove left wall of a
-    b->walls[1] = false;  // Remove right wall of b
+    a->walls[3] = false;  // left wall
+    b->walls[1] = false;  // right wall
   }
   if (dy == 1) {          // b is below a
-    a->walls[2] = false;  // Remove bottom wall of a
-    b->walls[0] = false;  // Remove top wall of b
+    a->walls[2] = false;  // bottom wall
+    b->walls[0] = false;  // top wall
   } else if (dy == -1) {  // b is above a
-    a->walls[0] = false;  // Remove top wall of a
-    b->walls[2] = false;  // Remove bottom wall of b
+    a->walls[0] = false;  // top wall
+    b->walls[2] = false;  // bottom wall
   }
 }
 
@@ -91,11 +92,18 @@ std::vector<Node*> MazeGenerator::getPath() const {
 void MazeGenerator::draw() const {
   // Draw the path from start to end
   std::vector<Node*> path = getPath();
+
+  int t = 5;
   for (const auto& node : path) {
     int x = node->x * CELL_SIZE;
     int y = node->y * CELL_SIZE;
-    DrawRectangle(x, y, CELL_SIZE, CELL_SIZE, GREEN);
+    DrawRectangle(x + t, y + t, CELL_SIZE - 2 * t, CELL_SIZE - 2 * t, GREEN);
   }
+
+  // Draw the start and end points
+  DrawRectangle(0, 0, CELL_SIZE, CELL_SIZE, Fade(BLUE, 0.5f));  // Start point
+  DrawRectangle((COLS - 1) * CELL_SIZE, (ROWS - 1) * CELL_SIZE, CELL_SIZE, CELL_SIZE,
+                Fade(RED, 0.5f));
 
   // Draw the maze grid
   for (const auto& cell : grid) {
@@ -116,8 +124,4 @@ void MazeGenerator::draw() const {
       DrawLine(x, y, x, y + CELL_SIZE, BLACK);
     }
   }
-
-  // Draw the start and end points
-  DrawRectangle(0, 0, CELL_SIZE, CELL_SIZE, BLUE);  // Start point
-  DrawRectangle((COLS - 1) * CELL_SIZE, (ROWS - 1) * CELL_SIZE, CELL_SIZE, CELL_SIZE, RED);
 }

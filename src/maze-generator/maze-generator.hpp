@@ -47,14 +47,14 @@ class MazeGenerator {
   void dfs();
   // Remove wall between two nodes
   void removeWall(Node* a, Node* b);
+  // returns the path from the start to the end of the maze
+  std::vector<Node*> getPath() const;
 
  public:
   MazeGenerator(int width, int height);
 
   // generate the maze using depth-first search
   void generate();
-  // returns the path from the start to the end of the maze
-  std::vector<Node*> getPath() const;
   // draw the maze on the screen
   void draw() const;
 };
