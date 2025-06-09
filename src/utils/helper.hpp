@@ -1,5 +1,3 @@
-#ifndef HELPER_HPP
-#define HELPER_HPP
 #pragma once
 
 #include <optional>
@@ -17,5 +15,3 @@ std::optional<T> getRandomElement(const std::vector<T>& vec) {
   return vec[distrib(gen)];
 }
 }  // namespace helper
-
-#endif

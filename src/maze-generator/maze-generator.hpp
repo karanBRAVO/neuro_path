@@ -3,8 +3,6 @@ Maze Generation - Graph-based Algorithm
 
 This code implements a maze generation algorithm using a graph-based approach.
 */
-#ifndef MAZE_GENERATOR_HPP
-#define MAZE_GENERATOR_HPP
 #pragma once
 
 #include <memory>
@@ -13,6 +11,9 @@ This code implements a maze generation algorithm using a graph-based approach.
 
 #include "raylib.h"
 #include "utils/helper.hpp"
+
+// Enum to represent the state of the maze generation
+enum GenerationState { NOT_STARTED, IN_PROGRESS, COMPLETED, FAILED };
 
 // Structure representing a cell in the maze
 struct Node {
@@ -23,7 +24,6 @@ struct Node {
   Node* parent;   // pointer to the parent node (for pathfinding)
 
   Node(int x, int y) : x(x), y(y), visited(false), walls{true, true, true, true}, parent(nullptr) {}
-  ~Node() = default;
 };
 
 // MazeGenerator class to generate a maze
@@ -34,6 +34,7 @@ class MazeGenerator {
   const int HEIGHT;                         // height of the maze
   const int COLS;                           // number of columns in the maze
   const int ROWS;                           // number of rows in the maze
+  int total_path_nodes = 0;                            // total nodes in path at ith frame
   std::vector<std::unique_ptr<Node>> grid;  // 1D array of nodes representing the maze
   std::vector<std::pair<int, int>> directions = {
       {0, -1},  // top
@@ -41,22 +42,20 @@ class MazeGenerator {
       {0, 1},   // bottom
       {-1, 0}   // left
   };
-  std::stack<Node*> stack;  // stack for depth-first search
+  GenerationState state = NOT_STARTED;  // current state of the maze generation
+  std::stack<Node*> stack;              // stack for depth-first search
+  std::vector<Node*> path;              // vector to hold the path from start to end
 
   // Depth-first search algorithm to generate the maze
-  void dfs();
+  void generate();
   // Remove wall between two nodes
   void removeWall(Node* a, Node* b);
-  // returns the path from the start to the end of the maze
-  std::vector<Node*> getPath() const;
+  // calculate the path from start to end
+  void calcPath();
 
  public:
-  MazeGenerator(int width, int height);
+  MazeGenerator(const int& width, const int& height);
 
-  // generate the maze using depth-first search
-  void generate();
-  // draw the maze on the screen
-  void draw() const;
+  void start_generation();
+  void draw(const int& frame_count, const int& fps);
 };
-
-#endif

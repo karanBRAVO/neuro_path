@@ -1,6 +1,6 @@
 #include "maze-generator.hpp"
 
-MazeGenerator::MazeGenerator(int width, int height)
+MazeGenerator::MazeGenerator(const int& width, const int& height)
     : WIDTH(width), HEIGHT(height), COLS(width / CELL_SIZE), ROWS(height / CELL_SIZE) {
   // Initialize the grid with Node pointers
   for (int i = 0; i < ROWS; ++i) {
@@ -10,50 +10,59 @@ MazeGenerator::MazeGenerator(int width, int height)
   }
 }
 
-void MazeGenerator::generate() {
-  dfs();  // Start the depth-first search to generate the maze
-}
+void MazeGenerator::start_generation() {
+  if (state != NOT_STARTED) return;
 
-void MazeGenerator::dfs() {
+  state = IN_PROGRESS;  // Set the state to in progress
+
   Node* start_node = grid[0].get();  // Start from the first node
   stack.push(start_node);            // Start from the first node
   start_node->visited = true;        // Mark the starting node as visited
 
-  // loop until the stack is empty
-  while (!stack.empty()) {
-    Node* current = stack.top();   // get the current node from the stack
-    std::vector<Node*> neighbors;  // vector to hold unvisited neighbors
-
-    // Check all four possible directions (top, right, bottom, left)
-    for (auto& direction : directions) {
-      int nx = current->x + direction.first;   // x-coordinate of the neighbor
-      int ny = current->y + direction.second;  // y-coordinate of the neighbor
-
-      // Check if the neighbor is within bounds
-      if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
-        Node* neighbor = grid[ny * COLS + nx].get();  // get the neighbor node (2D to 1D index)
-        // Check if the neighbor has not been visited
-        if (!neighbor->visited) {
-          neighbors.push_back(neighbor);
-        }
-      }
-    }
-
-    // If there are unvisited neighbors, choose one randomly
-    if (!neighbors.empty()) {
-      Node* next_node = helper::getRandomElement(neighbors).value();
-      next_node->parent = current;     // Set the parent of the next node
-      removeWall(current, next_node);  // Remove the wall between current and next_node
-      next_node->visited = true;       // Mark the next node as visited
-      stack.push(next_node);           // Push the next node onto the stack
-    } else {
-      stack.pop();  // Backtrack if no unvisited neighbors
-    }
-  }
-
   // remove entry and exit walls
   grid[0]->walls[3] = false;
   grid[grid.size() - 1]->walls[1] = false;
+
+  generate();  // Start the depth-first search to generate the maze
+}
+
+void MazeGenerator::generate() {
+  if (state != IN_PROGRESS) return;
+
+  if (stack.empty()) {
+    state = COMPLETED;
+    calcPath();
+    return;
+  }
+
+  Node* current = stack.top();   // get the current node from the stack
+  std::vector<Node*> neighbors;  // vector to hold unvisited neighbors
+
+  // Check all four possible directions (top, right, bottom, left)
+  for (auto& direction : directions) {
+    int nx = current->x + direction.first;   // x-coordinate of the neighbor
+    int ny = current->y + direction.second;  // y-coordinate of the neighbor
+
+    // Check if the neighbor is within bounds
+    if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
+      Node* neighbor = grid[ny * COLS + nx].get();  // get the neighbor node (2D to 1D index)
+      // Check if the neighbor has not been visited
+      if (!neighbor->visited) {
+        neighbors.push_back(neighbor);
+      }
+    }
+  }
+
+  // If there are unvisited neighbors, choose one randomly
+  if (!neighbors.empty()) {
+    Node* next_node = helper::getRandomElement(neighbors).value();
+    next_node->parent = current;     // Set the parent of the next node
+    removeWall(current, next_node);  // Remove the wall between current and next_node
+    next_node->visited = true;       // Mark the next node as visited
+    stack.push(next_node);           // Push the next node onto the stack
+  } else {
+    stack.pop();  // Backtrack if no unvisited neighbors
+  }
 }
 
 void MazeGenerator::removeWall(Node* a, Node* b) {
@@ -76,8 +85,7 @@ void MazeGenerator::removeWall(Node* a, Node* b) {
   }
 }
 
-std::vector<Node*> MazeGenerator::getPath() const {
-  std::vector<Node*> path;
+void MazeGenerator::calcPath() {
   Node* current = grid[grid.size() - 1].get();  // Start from the end node (bottom-right corner)
 
   while (current) {
@@ -86,29 +94,17 @@ std::vector<Node*> MazeGenerator::getPath() const {
   }
 
   std::reverse(path.begin(), path.end());  // Reverse the path to go from start to end
-  return path;
 }
 
-void MazeGenerator::draw() const {
-  // Draw the path from start to end
-  std::vector<Node*> path = getPath();
-
-  int t = 5;
-  for (const auto& node : path) {
-    int x = node->x * CELL_SIZE;
-    int y = node->y * CELL_SIZE;
-    DrawRectangle(x + t, y + t, CELL_SIZE - 2 * t, CELL_SIZE - 2 * t, GREEN);
-  }
-
-  // Draw the start and end points
-  DrawRectangle(0, 0, CELL_SIZE, CELL_SIZE, Fade(BLUE, 0.5f));  // Start point
-  DrawRectangle((COLS - 1) * CELL_SIZE, (ROWS - 1) * CELL_SIZE, CELL_SIZE, CELL_SIZE,
-                Fade(RED, 0.5f));
-
+void MazeGenerator::draw(const int& frame_count, const int& fps) {
   // Draw the maze grid
   for (const auto& cell : grid) {
     int x = cell->x * CELL_SIZE;
     int y = cell->y * CELL_SIZE;
+
+    if (state == IN_PROGRESS && cell->visited) {
+      DrawRectangle(x, y, CELL_SIZE, CELL_SIZE, Fade(LIGHTGRAY, 0.5f));
+    }
 
     // Draw walls based on the wall flags
     if (cell->walls[0]) {  // Top wall
@@ -123,5 +119,41 @@ void MazeGenerator::draw() const {
     if (cell->walls[3]) {  // Left wall
       DrawLine(x, y, x, y + CELL_SIZE, BLACK);
     }
+  }
+
+  if (state == NOT_STARTED) {
+    DrawRectangle(0, 0, WIDTH, HEIGHT, Fade(BLUE, 0.8f));
+    DrawText("Press SPACE to start maze generation", 190, 200, 20, BLACK);
+  } else if (state == IN_PROGRESS) {
+    if (!stack.empty()) {
+      Node* current = stack.top();  // Get the current node from the stack
+      int x = current->x * CELL_SIZE;
+      int y = current->y * CELL_SIZE;
+      DrawRectangle(x, y, CELL_SIZE, CELL_SIZE, Fade(PURPLE, 0.5f));  // Highlight the current node
+    }
+    if (frame_count % fps == 0) {
+      generate();
+    }
+  } else if (state == COMPLETED) {
+    for (int i = 0; i < total_path_nodes; i++) {
+      Node* node = path[i];
+      int x = node->x * CELL_SIZE;
+      int y = node->y * CELL_SIZE;
+      int t = 5;
+      DrawRectangle(x + t, y + t, CELL_SIZE - 2 * t, CELL_SIZE - 2 * t,
+                    Fade(GREEN, 0.5f));  // Highlight the path
+    }
+    if (frame_count % fps == 0) {
+      if (total_path_nodes < path.size()) {
+        total_path_nodes++;
+      }
+    }
+  }
+
+  if (state != NOT_STARTED) {
+    // start and end points
+    DrawRectangle(0, 0, CELL_SIZE, CELL_SIZE, Fade(BLUE, 0.5f));
+    DrawRectangle((COLS - 1) * CELL_SIZE, (ROWS - 1) * CELL_SIZE, CELL_SIZE, CELL_SIZE,
+                  Fade(RED, 0.5f));
   }
 }
