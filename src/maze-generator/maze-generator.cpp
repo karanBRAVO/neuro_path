@@ -19,10 +19,6 @@ void MazeGenerator::start_generation() {
   stack.push(start_node);            // Start from the first node
   start_node->visited = true;        // Mark the starting node as visited
 
-  // remove entry and exit walls
-  grid[0]->walls[3] = false;
-  grid[grid.size() - 1]->walls[1] = false;
-
   generate();  // Start the depth-first search to generate the maze
 }
 
@@ -32,6 +28,7 @@ void MazeGenerator::generate() {
   if (stack.empty()) {
     state = COMPLETED;
     calcPath();
+    calcBoundingBoxes();
     return;
   }
 
@@ -121,10 +118,7 @@ void MazeGenerator::draw(const int& frame_count, const int& fps) {
     }
   }
 
-  if (state == NOT_STARTED) {
-    DrawRectangle(0, 0, WIDTH, HEIGHT, Fade(BLUE, 0.8f));
-    DrawText("Press SPACE to start maze generation", 190, 200, 20, BLACK);
-  } else if (state == IN_PROGRESS) {
+  if (state == IN_PROGRESS) {
     if (!stack.empty()) {
       Node* current = stack.top();  // Get the current node from the stack
       int x = current->x * CELL_SIZE;
@@ -155,5 +149,110 @@ void MazeGenerator::draw(const int& frame_count, const int& fps) {
     DrawRectangle(0, 0, CELL_SIZE, CELL_SIZE, Fade(BLUE, 0.5f));
     DrawRectangle((COLS - 1) * CELL_SIZE, (ROWS - 1) * CELL_SIZE, CELL_SIZE, CELL_SIZE,
                   Fade(RED, 0.5f));
+  }
+}
+
+BoundingBox MazeGenerator::generateBBox(const Vector3& position, const BoxSize3D& dimensions) {
+  return {{position.x - dimensions.width / 2, position.y - dimensions.height / 2,
+           position.z - dimensions.depth / 2},
+          {position.x + dimensions.width / 2, position.y + dimensions.height / 2,
+           position.z + dimensions.depth / 2}};
+}
+
+void MazeGenerator::calcBoundingBoxes() {
+  for (const auto& cell : grid) {
+    // floor bbox
+    const Vector3 floor_pos = {cell->x * floor_dimension.width, 0.0f,
+                               cell->y * floor_dimension.depth};
+    const BoundingBox floor_bbox = generateBBox(floor_pos, floor_dimension);
+    floor_bboxes.push_back(floor_bbox);
+
+    // wall bbox
+    const BoxSize3D top_bottom_walls_dimensions = {floor_dimension.width, wall_height, wall_depth};
+    const BoxSize3D right_left_walls_dimensions = {wall_depth, wall_height, floor_dimension.depth};
+
+    if (cell->walls[0]) {
+      const Vector3 top_wall_pos = {floor_pos.x, floor_pos.y + wall_height / 2,
+                                    floor_pos.z - floor_dimension.depth / 2};
+
+      const BoundingBox top_wall_bbox = generateBBox(top_wall_pos, top_bottom_walls_dimensions);
+      wall_bboxes.push_back(top_wall_bbox);
+    }
+    if (cell->walls[1]) {
+      const Vector3 right_wall_pos = {floor_pos.x + floor_dimension.width / 2,
+                                      floor_pos.y + wall_height / 2, floor_pos.z};
+
+      const BoundingBox right_wall_bbox = generateBBox(right_wall_pos, right_left_walls_dimensions);
+      wall_bboxes.push_back(right_wall_bbox);
+    }
+    if (cell->walls[2]) {
+      const Vector3 bottom_wall_pos = {floor_pos.x, floor_pos.y + wall_height / 2,
+                                       floor_pos.z + floor_dimension.depth / 2};
+
+      const BoundingBox bottom_wall_bbox =
+          generateBBox(bottom_wall_pos, top_bottom_walls_dimensions);
+      wall_bboxes.push_back(bottom_wall_bbox);
+    }
+    if (cell->walls[3]) {
+      const Vector3 left_wall_pos = {floor_pos.x - floor_dimension.width / 2,
+                                     floor_pos.y + wall_height / 2, floor_pos.z};
+
+      const BoundingBox left_wall_bbox = generateBBox(left_wall_pos, right_left_walls_dimensions);
+      wall_bboxes.push_back(left_wall_bbox);
+    }
+  }
+}
+
+void MazeGenerator::draw3D() {
+  if (state != COMPLETED) return;
+
+  for (const auto& cell : grid) {
+    // floor tiles
+    const Vector3 floor_pos = {cell->x * floor_dimension.width, 0.0f,
+                               cell->y * floor_dimension.depth};
+    DrawCube(floor_pos, floor_dimension.width, floor_dimension.height, floor_dimension.depth,
+             PURPLE);
+    // DrawBoundingBox(floor_bboxes[cell->y * COLS + cell->x], RED);
+
+    // walls
+    const BoxSize3D top_bottom_walls_dimensions = {floor_dimension.width, wall_height, wall_depth};
+    const BoxSize3D right_left_walls_dimensions = {wall_depth, wall_height, floor_dimension.depth};
+    if (cell->walls[0]) {  // top
+      const Vector3 top_wall_pos = {floor_pos.x, floor_pos.y + wall_height / 2,
+                                    floor_pos.z - floor_dimension.depth / 2};
+      DrawCube(top_wall_pos, top_bottom_walls_dimensions.width, top_bottom_walls_dimensions.height,
+               top_bottom_walls_dimensions.depth, BLACK);
+    }
+    if (cell->walls[1]) {  // right
+      const Vector3 right_wall_pos = {floor_pos.x + floor_dimension.width / 2,
+                                      floor_pos.y + wall_height / 2, floor_pos.z};
+      DrawCube(right_wall_pos, right_left_walls_dimensions.width,
+               right_left_walls_dimensions.height, right_left_walls_dimensions.depth, BLACK);
+    }
+    if (cell->walls[2]) {  // bottom
+      const Vector3 bottom_wall_pos = {floor_pos.x, floor_pos.y + wall_height / 2,
+                                       floor_pos.z + floor_dimension.depth / 2};
+      DrawCube(bottom_wall_pos, top_bottom_walls_dimensions.width,
+               top_bottom_walls_dimensions.height, top_bottom_walls_dimensions.depth, BLACK);
+    }
+    if (cell->walls[3]) {  // left
+      const Vector3 left_wall_pos = {floor_pos.x - floor_dimension.width / 2,
+                                     floor_pos.y + wall_height / 2, floor_pos.z};
+      DrawCube(left_wall_pos, right_left_walls_dimensions.width, right_left_walls_dimensions.height,
+               right_left_walls_dimensions.depth, BLACK);
+    }
+  }
+
+  // for (const auto& wall_bbox : wall_bboxes) {
+  //   DrawBoundingBox(wall_bbox, RED);
+  // }
+
+  // draw the path
+  for (const auto& cell : path) {
+    const BoxSize3D path_tile_dimension = {0.5f, 0.2f, 0.5f};
+    const Vector3 path_cell_pos = {cell->x * floor_dimension.width, 0.1f,
+                                   cell->y * floor_dimension.depth};
+    DrawCube(path_cell_pos, path_tile_dimension.width, path_tile_dimension.height,
+             path_tile_dimension.depth, GREEN);
   }
 }
