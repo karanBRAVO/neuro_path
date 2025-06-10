@@ -38,8 +38,6 @@ int main() {
     float deltaTime = GetFrameTime();
 
     if (render3d) {
-      // UpdateCamera(&camera, CAMERA_FREE);
-
       camera.update();
       Vector3 cameraDirection = camera.getDirection();
 

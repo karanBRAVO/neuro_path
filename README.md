@@ -1,6 +1,7 @@
 # NeuroPath
 
 A maze game where you navigate through a grid to find the exit while avoiding obstacles.
+This sits in an interesting niche between educational games and cognitive assessment tools. It's similar to spatial memory tests used in psychology but gamified. Think of it as a blend between classic maze games and brain training apps.
 
 ## Technologies Used
 

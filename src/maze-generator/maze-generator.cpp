@@ -209,8 +209,13 @@ void MazeGenerator::draw3D() {
     // floor tiles
     const Vector3 floor_pos = {cell->x * floor_dimension.width, 0.0f,
                                cell->y * floor_dimension.depth};
+    Color floor_color = PURPLE;
+    if (cell->x == 0 && cell->y == 0)
+      floor_color = DARKPURPLE;
+    else if (cell->x == ROWS - 1 && cell->y == COLS - 1)
+      floor_color = RED;
     DrawCube(floor_pos, floor_dimension.width, floor_dimension.height, floor_dimension.depth,
-             PURPLE);
+             floor_color);
     // DrawBoundingBox(floor_bboxes[cell->y * COLS + cell->x], RED);
 
     // walls
