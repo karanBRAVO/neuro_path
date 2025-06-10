@@ -30,8 +30,8 @@ int main() {
   int frame_count = 0;
   int frame_interval = FPS / 2;
 
-  // flag to toggle 3D rendering
   bool render3d = false;
+  bool showInfo = true;
 
   // Main game loop
   while (!WindowShouldClose()) {
@@ -103,6 +103,9 @@ int main() {
     } else {
       frame_count++;
 
+      if (IsKeyPressed(KEY_I)) {
+        showInfo = !showInfo;
+      }
       if (IsKeyPressed(KEY_O)) {
         maze_generator.start_generation();
         frame_count = 0;
@@ -130,14 +133,17 @@ int main() {
       // 2D rendering
       maze_generator.draw(frame_count, frame_interval);
 
-      DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, Fade(BLUE, 0.5f));
-      DrawText("Press O Key to start maze generation", 10, 10, 20, BLACK);
-      DrawText("Press UP/DOWN Key to change maze generation speed", 10, 30, 20, BLACK);
-      if (maze_generator.getState() == IN_PROGRESS) {
-        DrawText("Maze generation in progress...", 10, 50, 20, BLACK);
-      } else if (maze_generator.getState() == COMPLETED) {
-        DrawText("Maze generation completed!", 10, 50, 20, BLACK);
-        DrawText("Press P Key to toggle 3D view", 10, 70, 20, BLACK);
+      if (showInfo) {
+        DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, Fade(BLUE, 0.5f));
+        DrawText("Press O Key to start maze generation", 10, 10, 20, BLACK);
+        DrawText("Press UP/DOWN Key to change maze generation speed", 10, 30, 20, BLACK);
+        DrawText("Press I Key to toggle this info", 10, 50, 20, BLACK);
+        if (maze_generator.getState() == IN_PROGRESS) {
+          DrawText("Maze generation in progress...", 10, 70, 20, BLACK);
+        } else if (maze_generator.getState() == COMPLETED) {
+          DrawText("Maze generation completed!", 10, 70, 20, BLACK);
+          DrawText("Press P Key to toggle 3D view", 10, 90, 20, BLACK);
+        }
       }
     } else {
       // 3D rendering
