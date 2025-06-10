@@ -33,6 +33,8 @@ set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 file(GLOB_RECURSE SOURCES
     "${SRC_DIR}/main.cpp"
     "${SRC_DIR}/maze-generator/*.cpp"
+    "${SRC_DIR}/player/*.cpp"
+    "${SRC_DIR}/camera3d/*.cpp"
     "${SRC_DIR}/utils/*.cpp"
 )
 
@@ -42,6 +44,8 @@ target_include_directories(NeuroPath PRIVATE
     "${SRC_DIR}"
     "${SRC_DIR}/maze-generator"
     "${SRC_DIR}/utils"
+    "${SRC_DIR}/player"
+    "${SRC_DIR}/camera3d"
 )
 
 target_link_libraries(NeuroPath PRIVATE raylib)

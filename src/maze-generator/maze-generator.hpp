@@ -36,7 +36,7 @@ class MazeGenerator {
   const int COLS;                                        // number of columns in the maze
   const int ROWS;                                        // number of rows in the maze
   const BoxSize3D floor_dimension = {1.0f, 0.2f, 1.0f};  // dimensions of the floor tile in 3D space
-  const float wall_height = 2.0f;                        // height of wall
+  const float wall_height = 1.5f;                        // height of wall
   const float wall_depth = 0.2f;                         // depth of wall
   int total_path_nodes = 0;                              // total nodes in path at ith frame
   std::vector<std::unique_ptr<Node>> grid;               // 1D array of nodes representing the maze

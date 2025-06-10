@@ -123,7 +123,7 @@ void MazeGenerator::draw(const int& frame_count, const int& fps) {
       Node* current = stack.top();  // Get the current node from the stack
       int x = current->x * CELL_SIZE;
       int y = current->y * CELL_SIZE;
-      DrawRectangle(x, y, CELL_SIZE, CELL_SIZE, Fade(PURPLE, 0.5f));  // Highlight the current node
+      DrawRectangle(x, y, CELL_SIZE, CELL_SIZE, PURPLE);  // Highlight the current node
     }
     if (frame_count % fps == 0) {
       generate();
@@ -135,7 +135,7 @@ void MazeGenerator::draw(const int& frame_count, const int& fps) {
       int y = node->y * CELL_SIZE;
       int t = 5;
       DrawRectangle(x + t, y + t, CELL_SIZE - 2 * t, CELL_SIZE - 2 * t,
-                    Fade(GREEN, 0.5f));  // Highlight the path
+                    GREEN);  // Highlight the path
     }
     if (frame_count % fps == 0) {
       if (total_path_nodes < path.size()) {
@@ -146,9 +146,8 @@ void MazeGenerator::draw(const int& frame_count, const int& fps) {
 
   if (state != NOT_STARTED) {
     // start and end points
-    DrawRectangle(0, 0, CELL_SIZE, CELL_SIZE, Fade(BLUE, 0.5f));
-    DrawRectangle((COLS - 1) * CELL_SIZE, (ROWS - 1) * CELL_SIZE, CELL_SIZE, CELL_SIZE,
-                  Fade(RED, 0.5f));
+    DrawRectangle(0, 0, CELL_SIZE, CELL_SIZE, MAGENTA);
+    DrawRectangle((COLS - 1) * CELL_SIZE, (ROWS - 1) * CELL_SIZE, CELL_SIZE, CELL_SIZE, RED);
   }
 }
 

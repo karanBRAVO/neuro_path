@@ -1,142 +1,105 @@
-#include <iostream>
-#include <vector>
-
+#include "camera3d/camera3d.hpp"
 #include "maze-generator/maze-generator.hpp"
+#include "player/player.hpp"
 #include "raylib.h"
-#include "raymath.h"
-#include "utils/types.hpp"
 
 int main() {
   const int SCREEN_WIDTH = 800;
   const int SCREEN_HEIGHT = 400;
   const int FPS = 60;
 
-  InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "NeuroPath - Maze");
+  InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "NeuroPath");
   SetTargetFPS(FPS);
   DisableCursor();
 
-  Camera camera = {0};
-  camera.position = {-0.1f, 0.95f, -0.1f};  // x, y, z coordinates
-  camera.target = {0.0f, 0.0f, 0.0f};
-  camera.up = {0.0f, 1.0f, 0.0f};
-  camera.fovy = 45.0f;
-  camera.projection = CAMERA_PERSPECTIVE;
-
+  // maze generator
   MazeGenerator maze_generator(SCREEN_WIDTH, SCREEN_HEIGHT);
 
+  // player
+  Player player({0.0f, 10.0f, 0.0f});
+  const float gravity = 9.81f;
+  const float jumpStrength = 5.0f;
+  float moveSpeed = 1.2f;
+  float jumpSpeed = 5.0f;
+  bool isJumping = false;
+
+  // camera
+  neuro_path::Camera3D camera({0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f});
+
+  // animation frame control
   int frame_count = 0;
   int frame_interval = FPS / 2;
 
-  float mouseX = 0.0f;
-  float mouseY = 0.0f;
-  float yaw = 0.0f;                        // Horizontal rotation
-  float pitch = 0.0f;                      // Vertical rotation
-  float mouseSensitivity = 0.003f;         // Adjust for sensitivity
-  const float maxPitch = 89.0f * DEG2RAD;  // Limit vertical look
+  // flag to toggle 3D rendering
+  bool render3d = false;
 
-  // player
-  Vector3 playerPosition = {0.0f, 10.0f, 0.0f};
-  const BoxSize3D playerDimensions = {0.3f, 1.0f, 0.3f};  // width, height, depth
-  Vector2 velocity = {1.2f, 0.0f};                        // xz, y
-  Vector3 acceleration = {0.0f, 9.8f, 0.0f};
-  float jump_strength = 5.0f;
-  bool isJumping = false;
-  BoundingBox playerBox = {
-      {playerPosition.x - playerDimensions.width / 2, playerPosition.y,
-       playerPosition.z - playerDimensions.depth / 2},
-      {playerPosition.x + playerDimensions.width / 2, playerPosition.y + playerDimensions.height,
-       playerPosition.z + playerDimensions.depth / 2}};
-
-  bool render3d = false;  // Flag to toggle 3D rendering
-
+  // Main game loop
   while (!WindowShouldClose()) {
     float deltaTime = GetFrameTime();
-
-    // if (IsKeyPressed(KEY_I)) {
-    //   render3d = !render3d;
-    // }
 
     if (render3d) {
       // UpdateCamera(&camera, CAMERA_FREE);
 
-      Vector2 mouseDelta = GetMouseDelta();
-      yaw -= mouseDelta.x * mouseSensitivity;
-      pitch -= mouseDelta.y * mouseSensitivity;
-
-      // Clamp pitch to prevent over-rotation
-      if (pitch > maxPitch) pitch = maxPitch;
-      if (pitch < -maxPitch) pitch = -maxPitch;
-
-      // Calculate camera direction based on yaw and pitch
-      Vector3 direction = {cosf(pitch) * sinf(yaw), sinf(pitch), cosf(pitch) * cosf(yaw)};
+      camera.update();
+      Vector3 cameraDirection = camera.getDirection();
 
       // Update camera position and target
       Vector3 cameraOffset = {0.0f, 0.5f, 0.0f};  // Camera height offset from player
-      camera.position = Vector3Add(playerPosition, cameraOffset);
-      camera.target = Vector3Add(camera.position, direction);
+      camera.setPosition(Vector3Add(player.getPos(), cameraOffset));
+      camera.setTarget(Vector3Add(camera.getPosition(), cameraDirection));
 
       // calculate forward and right vectors based on yaw
-      // Forward vector is based on yaw, right vector is perpendicular to forward
-      Vector3 forward = {sinf(yaw), 0.0f, cosf(yaw)};
-      Vector3 right = {sinf(yaw + PI / 2), 0.0f, cosf(yaw + PI / 2)};
+      Vector3 forward = camera.getForward();
+      Vector3 right = camera.getRight();
 
       // last player position
-      Vector3 previousPlayerPosition = playerPosition;
+      const Vector3 previousPlayerPosition = player.getPos();
 
       // Player movement
       if (IsKeyDown(KEY_W)) {
-        playerPosition = Vector3Add(playerPosition, Vector3Scale(forward, velocity.x * deltaTime));
+        Vector3 newPos = Vector3Add(player.getPos(), Vector3Scale(forward, moveSpeed * deltaTime));
+        player.setPos(newPos);
       }
       if (IsKeyDown(KEY_S)) {
-        playerPosition =
-            Vector3Subtract(playerPosition, Vector3Scale(forward, velocity.x * deltaTime));
+        Vector3 newPos =
+            Vector3Subtract(player.getPos(), Vector3Scale(forward, moveSpeed * deltaTime));
+        player.setPos(newPos);
       }
       if (IsKeyDown(KEY_A)) {
-        playerPosition = Vector3Add(playerPosition, Vector3Scale(right, velocity.x * deltaTime));
+        Vector3 newPos = Vector3Add(player.getPos(), Vector3Scale(right, moveSpeed * deltaTime));
+        player.setPos(newPos);
       }
       if (IsKeyDown(KEY_D)) {
-        playerPosition =
-            Vector3Subtract(playerPosition, Vector3Scale(right, velocity.x * deltaTime));
+        Vector3 newPos =
+            Vector3Subtract(player.getPos(), Vector3Scale(right, moveSpeed * deltaTime));
+        player.setPos(newPos);
       }
       if (IsKeyPressed(KEY_SPACE) && !isJumping) {
-        velocity.y = jump_strength;
+        jumpSpeed = jumpStrength;
         isJumping = true;
       }
 
-      velocity.y -= acceleration.y * deltaTime;
-      playerPosition.y += velocity.y * deltaTime;
-
-      playerBox.min = {playerPosition.x - playerDimensions.width / 2, playerPosition.y,
-                       playerPosition.z - playerDimensions.depth / 2};
-      playerBox.max = {playerPosition.x + playerDimensions.width / 2,
-                       playerPosition.y + playerDimensions.height,
-                       playerPosition.z + playerDimensions.depth / 2};
+      // Apply gravity if jumping
+      jumpSpeed -= gravity * deltaTime;
+      Vector3 newPos = Vector3Add(player.getPos(), {0.0f, jumpSpeed * deltaTime, 0.0f});
+      player.setPos(newPos);
 
       // Check for collision with the floor
       for (const auto& floor_bbox : maze_generator.getFloorBBoxes()) {
-        if (CheckCollisionBoxes(playerBox, floor_bbox)) {
-          playerPosition.y = floor_bbox.max.y;
-          velocity.y = 0.0f;
+        if (CheckCollisionBoxes(player.getBBox(), floor_bbox)) {
+          Vector3 newPos = player.getPos();
+          newPos.y = floor_bbox.max.y;
+          player.setPos(newPos);
+          jumpSpeed = 0.0f;
           isJumping = false;
-
-          playerBox.min = {playerPosition.x - playerDimensions.width / 2, playerPosition.y,
-                           playerPosition.z - playerDimensions.depth / 2};
-          playerBox.max = {playerPosition.x + playerDimensions.width / 2,
-                           playerPosition.y + playerDimensions.height,
-                           playerPosition.z + playerDimensions.depth / 2};
           break;
         }
       }
 
       // Check for collision with walls
       for (const auto& wall_bbox : maze_generator.getWallBBoxes()) {
-        if (CheckCollisionBoxes(playerBox, wall_bbox)) {
-          playerPosition = previousPlayerPosition;  // revert to last position
-          playerBox.min = {playerPosition.x - playerDimensions.width / 2, playerPosition.y,
-                           playerPosition.z - playerDimensions.depth / 2};
-          playerBox.max = {playerPosition.x + playerDimensions.width / 2,
-                           playerPosition.y + playerDimensions.height / 2,
-                           playerPosition.z + playerDimensions.depth / 2};
+        if (CheckCollisionBoxes(player.getBBox(), wall_bbox)) {
+          player.setPos(previousPlayerPosition);
         }
       }
     } else {
@@ -165,31 +128,25 @@ int main() {
     BeginDrawing();
     ClearBackground(RAYWHITE);
 
-    if (maze_generator.getState() == NOT_STARTED) {
-      DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, Fade(BLUE, 0.8f));
-      DrawText("Press O Key to start maze generation", 190, 200, 20, BLACK);
-    } else if (maze_generator.getState() == COMPLETED && !render3d) {
-      DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, Fade(BLUE, 0.8f));
-      DrawText("Press P Key to toggle 3D view", 190, 200, 20, BLACK);
-    }
-
     if (!render3d) {
+      // 2D rendering
       maze_generator.draw(frame_count, frame_interval);
+
+      DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, Fade(BLUE, 0.5f));
+      DrawText("Press O Key to start maze generation", 10, 10, 20, BLACK);
+      DrawText("Press UP/DOWN Key to change maze generation speed", 10, 30, 20, BLACK);
+      if (maze_generator.getState() == IN_PROGRESS) {
+        DrawText("Maze generation in progress...", 10, 50, 20, BLACK);
+      } else if (maze_generator.getState() == COMPLETED) {
+        DrawText("Maze generation completed!", 10, 50, 20, BLACK);
+        DrawText("Press P Key to toggle 3D view", 10, 70, 20, BLACK);
+      }
     } else {
       // 3D rendering
-      BeginMode3D(camera);
-
-      // player
-      // DrawCylinder(playerPosition, playerDimensions.width / 2, playerDimensions.width / 2,
-      //              playerDimensions.height, 16, BLUE);
-      // DrawCylinderWires(playerPosition, playerDimensions.width / 2, playerDimensions.width / 2,
-      //                   playerDimensions.height, 16, BLUE);
-      // DrawBoundingBox(playerBox, RED);
-
+      BeginMode3D(camera.getCamera());
+      // player.draw3D();
       maze_generator.draw3D();
-
       // DrawGrid(10, 1.0f);  // Draw a grid for reference
-
       EndMode3D();
     }
 
