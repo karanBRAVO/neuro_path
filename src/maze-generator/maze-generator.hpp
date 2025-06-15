@@ -72,5 +72,5 @@ class MazeGenerator {
 
   void start_generation();
   void draw(const int& frame_count, const int& fps);
-  void draw3D();
+  void draw3D(const bool& show_path);
 };

@@ -39,10 +39,12 @@ int main() {
 
     if (render3d) {
       camera.update();
-      Vector3 cameraDirection = camera.getDirection();
+      const Vector3 cameraDirection = camera.getDirection();
 
       // Update camera position and target
-      Vector3 cameraOffset = {0.0f, 0.5f, 0.0f};  // Camera height offset from player
+      const float shake = sin(GetTime() * 10.0f) * 0.02f;
+      const Vector3 cameraOffset = {shake, 0.5f + shake,
+                                    shake};  // Camera height offset from player
       camera.setPosition(Vector3Add(player.getPos(), cameraOffset));
       camera.setTarget(Vector3Add(camera.getPosition(), cameraDirection));
 
@@ -149,7 +151,7 @@ int main() {
       // 3D rendering
       BeginMode3D(camera.getCamera());
       // player.draw3D();
-      maze_generator.draw3D();
+      maze_generator.draw3D(false);
       // DrawGrid(10, 1.0f);  // Draw a grid for reference
       EndMode3D();
     }

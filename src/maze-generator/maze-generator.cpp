@@ -202,7 +202,7 @@ void MazeGenerator::calcBoundingBoxes() {
   }
 }
 
-void MazeGenerator::draw3D() {
+void MazeGenerator::draw3D(const bool& show_path) {
   if (state != COMPLETED) return;
 
   for (const auto& cell : grid) {
@@ -247,16 +247,19 @@ void MazeGenerator::draw3D() {
     }
   }
 
+  // debugging
   // for (const auto& wall_bbox : wall_bboxes) {
   //   DrawBoundingBox(wall_bbox, RED);
   // }
 
   // draw the path
-  for (const auto& cell : path) {
-    const BoxSize3D path_tile_dimension = {0.5f, 0.2f, 0.5f};
-    const Vector3 path_cell_pos = {cell->x * floor_dimension.width, 0.1f,
-                                   cell->y * floor_dimension.depth};
-    DrawCube(path_cell_pos, path_tile_dimension.width, path_tile_dimension.height,
-             path_tile_dimension.depth, GREEN);
+  if (show_path) {
+    for (const auto& cell : path) {
+      const BoxSize3D path_tile_dimension = {0.5f, 0.2f, 0.5f};
+      const Vector3 path_cell_pos = {cell->x * floor_dimension.width, 0.1f,
+                                     cell->y * floor_dimension.depth};
+      DrawCube(path_cell_pos, path_tile_dimension.width, path_tile_dimension.height,
+               path_tile_dimension.depth, GREEN);
+    }
   }
 }
