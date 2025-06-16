@@ -49,3 +49,10 @@ target_include_directories(NeuroPath PRIVATE
 )
 
 target_link_libraries(NeuroPath PRIVATE raylib)
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/resources")
+    file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/src/resources" DESTINATION "${CMAKE_BINARY_DIR}/Debug")
+    message(STATUS "Copied resources from src/resources directory")
+else()
+    message(WARNING "No resources directory found. Create one with cubicmap_atlas.png")
+endif()

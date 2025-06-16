@@ -202,48 +202,64 @@ void MazeGenerator::calcBoundingBoxes() {
   }
 }
 
-void MazeGenerator::draw3D(const bool& show_path) {
+void MazeGenerator::draw3D(const bool& show_path, const Texture2D& wall_texture,
+                           const Texture2D& floor_texture) {
   if (state != COMPLETED) return;
 
   for (const auto& cell : grid) {
     // floor tiles
     const Vector3 floor_pos = {cell->x * floor_dimension.width, 0.0f,
                                cell->y * floor_dimension.depth};
-    Color floor_color = PURPLE;
-    if (cell->x == 0 && cell->y == 0)
-      floor_color = DARKPURPLE;
-    else if (cell->x == ROWS - 1 && cell->y == COLS - 1)
-      floor_color = RED;
-    DrawCube(floor_pos, floor_dimension.width, floor_dimension.height, floor_dimension.depth,
-             floor_color);
+    const Color floor_color = LIGHTGRAY;
+
+    // DrawCube(floor_pos, floor_dimension.width, floor_dimension.height, floor_dimension.depth,
+    //          floor_color);
+    neuro_path_texture::DrawCubeTexture(floor_texture, floor_pos, floor_dimension.width,
+                                        floor_dimension.height, floor_dimension.depth, floor_color);
     // DrawBoundingBox(floor_bboxes[cell->y * COLS + cell->x], RED);
 
     // walls
     const BoxSize3D top_bottom_walls_dimensions = {floor_dimension.width, wall_height, wall_depth};
     const BoxSize3D right_left_walls_dimensions = {wall_depth, wall_height, floor_dimension.depth};
+    const Color wall_color = GRAY;
+
     if (cell->walls[0]) {  // top
       const Vector3 top_wall_pos = {floor_pos.x, floor_pos.y + wall_height / 2,
                                     floor_pos.z - floor_dimension.depth / 2};
-      DrawCube(top_wall_pos, top_bottom_walls_dimensions.width, top_bottom_walls_dimensions.height,
-               top_bottom_walls_dimensions.depth, BLACK);
+      // DrawCube(top_wall_pos, top_bottom_walls_dimensions.width,
+      // top_bottom_walls_dimensions.height,
+      //          top_bottom_walls_dimensions.depth, BLACK);
+      neuro_path_texture::DrawCubeTexture(
+          wall_texture, top_wall_pos, top_bottom_walls_dimensions.width,
+          top_bottom_walls_dimensions.height, top_bottom_walls_dimensions.depth, wall_color);
     }
     if (cell->walls[1]) {  // right
       const Vector3 right_wall_pos = {floor_pos.x + floor_dimension.width / 2,
                                       floor_pos.y + wall_height / 2, floor_pos.z};
-      DrawCube(right_wall_pos, right_left_walls_dimensions.width,
-               right_left_walls_dimensions.height, right_left_walls_dimensions.depth, BLACK);
+      // DrawCube(right_wall_pos, right_left_walls_dimensions.width,
+      //          right_left_walls_dimensions.height, right_left_walls_dimensions.depth, BLACK);
+      neuro_path_texture::DrawCubeTexture(
+          wall_texture, right_wall_pos, right_left_walls_dimensions.width,
+          right_left_walls_dimensions.height, right_left_walls_dimensions.depth, wall_color);
     }
     if (cell->walls[2]) {  // bottom
       const Vector3 bottom_wall_pos = {floor_pos.x, floor_pos.y + wall_height / 2,
                                        floor_pos.z + floor_dimension.depth / 2};
-      DrawCube(bottom_wall_pos, top_bottom_walls_dimensions.width,
-               top_bottom_walls_dimensions.height, top_bottom_walls_dimensions.depth, BLACK);
+      // DrawCube(bottom_wall_pos, top_bottom_walls_dimensions.width,
+      //          top_bottom_walls_dimensions.height, top_bottom_walls_dimensions.depth, BLACK);
+      neuro_path_texture::DrawCubeTexture(
+          wall_texture, bottom_wall_pos, top_bottom_walls_dimensions.width,
+          top_bottom_walls_dimensions.height, top_bottom_walls_dimensions.depth, wall_color);
     }
     if (cell->walls[3]) {  // left
       const Vector3 left_wall_pos = {floor_pos.x - floor_dimension.width / 2,
                                      floor_pos.y + wall_height / 2, floor_pos.z};
-      DrawCube(left_wall_pos, right_left_walls_dimensions.width, right_left_walls_dimensions.height,
-               right_left_walls_dimensions.depth, BLACK);
+      // DrawCube(left_wall_pos, right_left_walls_dimensions.width,
+      // right_left_walls_dimensions.height,
+      //          right_left_walls_dimensions.depth, BLACK);
+      neuro_path_texture::DrawCubeTexture(
+          wall_texture, left_wall_pos, right_left_walls_dimensions.width,
+          right_left_walls_dimensions.height, right_left_walls_dimensions.depth, wall_color);
     }
   }
 

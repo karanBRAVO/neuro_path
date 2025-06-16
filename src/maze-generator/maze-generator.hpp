@@ -11,6 +11,7 @@ This code implements a maze generation algorithm using a graph-based approach.
 
 #include "raylib.h"
 #include "utils/helper.hpp"
+#include "utils/texture.hpp"
 #include "utils/types.hpp"
 
 // Enum to represent the state of the maze generation
@@ -72,5 +73,5 @@ class MazeGenerator {
 
   void start_generation();
   void draw(const int& frame_count, const int& fps);
-  void draw3D(const bool& show_path);
+  void draw3D(const bool& show_path, const Texture2D& wall_texture, const Texture2D& floor_texture);
 };

@@ -3,14 +3,29 @@
 #include "player/player.hpp"
 #include "raylib.h"
 
+void play_sound(const Sound& sound) {
+  if (!IsSoundPlaying(sound)) {
+    PlaySound(sound);
+  }
+}
+
+void pause_sound(const Sound& sound) {
+  if (IsSoundPlaying(sound)) {
+    StopSound(sound);
+  }
+}
+
 int main() {
   const int SCREEN_WIDTH = 800;
   const int SCREEN_HEIGHT = 400;
   const int FPS = 60;
 
   InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "NeuroPath");
-  SetTargetFPS(FPS);
-  DisableCursor();
+
+  InitAudioDevice();  // Initialize audio device
+
+  SetTargetFPS(FPS);  // Set target FPS (maximum)
+  DisableCursor();    // Disable cursor (lock cursor)
 
   // maze generator
   MazeGenerator maze_generator(SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -33,11 +48,24 @@ int main() {
   bool render3d = false;
   bool showInfo = true;
 
+  // Load textures
+  Texture2D wallTexture = LoadTexture("resources/wall_texture.jpg");
+  Texture2D floorTexture = LoadTexture("resources/floor_texture.png");
+
+  // Sound and Music effects
+  Sound walkSound = LoadSound("resources/walk.mp3");
+  Music bgMusic = LoadMusicStream("resources/bg.mp3");
+
   // Main game loop
   while (!WindowShouldClose()) {
     float deltaTime = GetFrameTime();
+    UpdateMusicStream(bgMusic);
 
     if (render3d) {
+      if (!IsMusicStreamPlaying(bgMusic)) {
+        PlayMusicStream(bgMusic);
+      }
+      UpdateMusicStream(bgMusic);
       camera.update();
       const Vector3 cameraDirection = camera.getDirection();
 
@@ -59,20 +87,27 @@ int main() {
       if (IsKeyDown(KEY_W)) {
         Vector3 newPos = Vector3Add(player.getPos(), Vector3Scale(forward, moveSpeed * deltaTime));
         player.setPos(newPos);
+        play_sound(walkSound);
       }
       if (IsKeyDown(KEY_S)) {
         Vector3 newPos =
             Vector3Subtract(player.getPos(), Vector3Scale(forward, moveSpeed * deltaTime));
         player.setPos(newPos);
+        play_sound(walkSound);
       }
       if (IsKeyDown(KEY_A)) {
         Vector3 newPos = Vector3Add(player.getPos(), Vector3Scale(right, moveSpeed * deltaTime));
         player.setPos(newPos);
+        play_sound(walkSound);
       }
       if (IsKeyDown(KEY_D)) {
         Vector3 newPos =
             Vector3Subtract(player.getPos(), Vector3Scale(right, moveSpeed * deltaTime));
         player.setPos(newPos);
+        play_sound(walkSound);
+      }
+      if (!IsKeyDown(KEY_W) && !IsKeyDown(KEY_S) && !IsKeyDown(KEY_A) && !IsKeyDown(KEY_D)) {
+        pause_sound(walkSound);
       }
       if (IsKeyPressed(KEY_SPACE) && !isJumping) {
         jumpSpeed = jumpStrength;
@@ -136,7 +171,7 @@ int main() {
       maze_generator.draw(frame_count, frame_interval);
 
       if (showInfo) {
-        DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, Fade(BLUE, 0.5f));
+        DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, Fade(BLUE, 0.8f));
         DrawText("Press O Key to start maze generation", 10, 10, 20, BLACK);
         DrawText("Press UP/DOWN Key to change maze generation speed", 10, 30, 20, BLACK);
         DrawText("Press I Key to toggle this info", 10, 50, 20, BLACK);
@@ -151,7 +186,7 @@ int main() {
       // 3D rendering
       BeginMode3D(camera.getCamera());
       // player.draw3D();
-      maze_generator.draw3D(false);
+      maze_generator.draw3D(false, wallTexture, floorTexture);
       // DrawGrid(10, 1.0f);  // Draw a grid for reference
       EndMode3D();
     }
@@ -159,6 +194,13 @@ int main() {
     EndDrawing();
   }
 
+  // cleanup
+  UnloadTexture(wallTexture);   // Unload the wall texture
+  UnloadTexture(floorTexture);  // Unload the floor texture
+
+  UnloadSound(walkSound);  // Unload the walk sound
+
+  CloseAudioDevice();  // Close audio device
   CloseWindow();
   return 0;
 }
