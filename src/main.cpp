@@ -2,18 +2,7 @@
 #include "maze-generator/maze-generator.hpp"
 #include "player/player.hpp"
 #include "raylib.h"
-
-void play_sound(const Sound& sound) {
-  if (!IsSoundPlaying(sound)) {
-    PlaySound(sound);
-  }
-}
-
-void stop_sound(const Sound& sound) {
-  if (IsSoundPlaying(sound)) {
-    StopSound(sound);
-  }
-}
+#include "utils/helper.hpp"
 
 int main() {
   const int SCREEN_WIDTH = 800;
@@ -49,14 +38,14 @@ int main() {
   bool showInfo = true;
 
   // Load textures
-  Texture2D wallTexture = LoadTexture("resources/wall_texture.jpg");
-  Texture2D floorTexture = LoadTexture("resources/floor_texture.png");
+  Texture2D wallTexture = LoadTexture("resources/textures/wall_texture.jpg");
+  Texture2D floorTexture = LoadTexture("resources/textures/floor_texture.png");
 
   // Sound and Music effects
-  Sound walkSound = LoadSound("resources/walk.mp3");
-  Sound runSound = LoadSound("resources/running.mp3");
-  Sound jumpLandingSound = LoadSound("resources/jump_land.mp3");
-  Music bgMusic = LoadMusicStream("resources/bg.mp3");
+  Sound walkSound = LoadSound("resources/sounds/walk.mp3");
+  Sound runSound = LoadSound("resources/sounds/running.mp3");
+  Sound jumpLandingSound = LoadSound("resources/sounds/jump_land.mp3");
+  Music bgMusic = LoadMusicStream("resources/sounds/bg.mp3");
 
   // Main game loop
   while (!WindowShouldClose()) {
@@ -90,40 +79,40 @@ int main() {
         const Vector3 newPos =
             Vector3Add(player.getPos(), Vector3Scale(forward, (moveSpeed * 2) * deltaTime));
         player.setPos(newPos);
-        play_sound(runSound);
+        helper::play_sound(runSound);
       } else {
         if (IsKeyDown(KEY_W)) {
           const Vector3 newPos =
               Vector3Add(player.getPos(), Vector3Scale(forward, moveSpeed * deltaTime));
           player.setPos(newPos);
-          play_sound(walkSound);
+          helper::play_sound(walkSound);
         }
         if (IsKeyDown(KEY_S)) {
           const Vector3 newPos =
               Vector3Subtract(player.getPos(), Vector3Scale(forward, moveSpeed * deltaTime));
           player.setPos(newPos);
-          play_sound(walkSound);
+          helper::play_sound(walkSound);
         }
         if (IsKeyDown(KEY_A)) {
           const Vector3 newPos =
               Vector3Add(player.getPos(), Vector3Scale(right, moveSpeed * deltaTime));
           player.setPos(newPos);
-          play_sound(walkSound);
+          helper::play_sound(walkSound);
         }
         if (IsKeyDown(KEY_D)) {
           const Vector3 newPos =
               Vector3Subtract(player.getPos(), Vector3Scale(right, moveSpeed * deltaTime));
           player.setPos(newPos);
-          play_sound(walkSound);
+          helper::play_sound(walkSound);
         }
       }
 
       if (!IsKeyDown(KEY_LEFT_CONTROL) || isJumping) {
-        stop_sound(runSound);
+        helper::stop_sound(runSound);
       }
       if ((!IsKeyDown(KEY_W) && !IsKeyDown(KEY_S) && !IsKeyDown(KEY_A) && !IsKeyDown(KEY_D)) ||
           IsKeyDown(KEY_LEFT_CONTROL) || isJumping) {
-        stop_sound(walkSound);
+        helper::stop_sound(walkSound);
       }
 
       if (IsKeyPressed(KEY_SPACE) && !isJumping) {
@@ -151,7 +140,7 @@ int main() {
       }
 
       if (wasJumping && !isJumping) {
-        play_sound(jumpLandingSound);
+        helper::play_sound(jumpLandingSound);
       }
 
       // Check for collision with walls
