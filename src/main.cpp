@@ -9,7 +9,7 @@ void play_sound(const Sound& sound) {
   }
 }
 
-void pause_sound(const Sound& sound) {
+void stop_sound(const Sound& sound) {
   if (IsSoundPlaying(sound)) {
     StopSound(sound);
   }
@@ -34,7 +34,7 @@ int main() {
   Player player({0.0f, 10.0f, 0.0f});
   const float gravity = 9.81f;
   const float jumpStrength = 5.0f;
-  float moveSpeed = 1.2f;
+  const float moveSpeed = 1.2f;
   float jumpSpeed = 5.0f;
   bool isJumping = false;
 
@@ -54,6 +54,8 @@ int main() {
 
   // Sound and Music effects
   Sound walkSound = LoadSound("resources/walk.mp3");
+  Sound runSound = LoadSound("resources/running.mp3");
+  Sound jumpLandingSound = LoadSound("resources/jump_land.mp3");
   Music bgMusic = LoadMusicStream("resources/bg.mp3");
 
   // Main game loop
@@ -84,31 +86,46 @@ int main() {
       const Vector3 previousPlayerPosition = player.getPos();
 
       // Player movement
-      if (IsKeyDown(KEY_W)) {
-        Vector3 newPos = Vector3Add(player.getPos(), Vector3Scale(forward, moveSpeed * deltaTime));
+      if (IsKeyDown(KEY_LEFT_CONTROL)) {
+        const Vector3 newPos =
+            Vector3Add(player.getPos(), Vector3Scale(forward, (moveSpeed * 2) * deltaTime));
         player.setPos(newPos);
-        play_sound(walkSound);
+        play_sound(runSound);
+      } else {
+        if (IsKeyDown(KEY_W)) {
+          const Vector3 newPos =
+              Vector3Add(player.getPos(), Vector3Scale(forward, moveSpeed * deltaTime));
+          player.setPos(newPos);
+          play_sound(walkSound);
+        }
+        if (IsKeyDown(KEY_S)) {
+          const Vector3 newPos =
+              Vector3Subtract(player.getPos(), Vector3Scale(forward, moveSpeed * deltaTime));
+          player.setPos(newPos);
+          play_sound(walkSound);
+        }
+        if (IsKeyDown(KEY_A)) {
+          const Vector3 newPos =
+              Vector3Add(player.getPos(), Vector3Scale(right, moveSpeed * deltaTime));
+          player.setPos(newPos);
+          play_sound(walkSound);
+        }
+        if (IsKeyDown(KEY_D)) {
+          const Vector3 newPos =
+              Vector3Subtract(player.getPos(), Vector3Scale(right, moveSpeed * deltaTime));
+          player.setPos(newPos);
+          play_sound(walkSound);
+        }
       }
-      if (IsKeyDown(KEY_S)) {
-        Vector3 newPos =
-            Vector3Subtract(player.getPos(), Vector3Scale(forward, moveSpeed * deltaTime));
-        player.setPos(newPos);
-        play_sound(walkSound);
+
+      if (!IsKeyDown(KEY_LEFT_CONTROL) || isJumping) {
+        stop_sound(runSound);
       }
-      if (IsKeyDown(KEY_A)) {
-        Vector3 newPos = Vector3Add(player.getPos(), Vector3Scale(right, moveSpeed * deltaTime));
-        player.setPos(newPos);
-        play_sound(walkSound);
+      if ((!IsKeyDown(KEY_W) && !IsKeyDown(KEY_S) && !IsKeyDown(KEY_A) && !IsKeyDown(KEY_D)) ||
+          IsKeyDown(KEY_LEFT_CONTROL) || isJumping) {
+        stop_sound(walkSound);
       }
-      if (IsKeyDown(KEY_D)) {
-        Vector3 newPos =
-            Vector3Subtract(player.getPos(), Vector3Scale(right, moveSpeed * deltaTime));
-        player.setPos(newPos);
-        play_sound(walkSound);
-      }
-      if (!IsKeyDown(KEY_W) && !IsKeyDown(KEY_S) && !IsKeyDown(KEY_A) && !IsKeyDown(KEY_D)) {
-        pause_sound(walkSound);
-      }
+
       if (IsKeyPressed(KEY_SPACE) && !isJumping) {
         jumpSpeed = jumpStrength;
         isJumping = true;
@@ -118,6 +135,8 @@ int main() {
       jumpSpeed -= gravity * deltaTime;
       Vector3 newPos = Vector3Add(player.getPos(), {0.0f, jumpSpeed * deltaTime, 0.0f});
       player.setPos(newPos);
+
+      const bool wasJumping = isJumping;
 
       // Check for collision with the floor
       for (const auto& floor_bbox : maze_generator.getFloorBBoxes()) {
@@ -129,6 +148,10 @@ int main() {
           isJumping = false;
           break;
         }
+      }
+
+      if (wasJumping && !isJumping) {
+        play_sound(jumpLandingSound);
       }
 
       // Check for collision with walls
@@ -176,10 +199,10 @@ int main() {
         DrawText("Press UP/DOWN Key to change maze generation speed", 10, 30, 20, BLACK);
         DrawText("Press I Key to toggle this info", 10, 50, 20, BLACK);
         if (maze_generator.getState() == IN_PROGRESS) {
-          DrawText("Maze generation in progress...", 10, 70, 20, BLACK);
+          DrawText("Maze generation in progress...", 150, 170, 20, BLACK);
         } else if (maze_generator.getState() == COMPLETED) {
-          DrawText("Maze generation completed!", 10, 70, 20, BLACK);
-          DrawText("Press P Key to toggle 3D view", 10, 90, 20, BLACK);
+          DrawText("Maze generation completed!", 150, 170, 20, BLACK);
+          DrawText("Press P Key to toggle 3D view", 150, 190, 20, BLACK);
         }
       }
     } else {
@@ -195,12 +218,15 @@ int main() {
   }
 
   // cleanup
-  UnloadTexture(wallTexture);   // Unload the wall texture
-  UnloadTexture(floorTexture);  // Unload the floor texture
+  UnloadTexture(wallTexture);
+  UnloadTexture(floorTexture);
 
-  UnloadSound(walkSound);  // Unload the walk sound
+  UnloadSound(walkSound);
+  UnloadSound(runSound);
+  UnloadSound(jumpLandingSound);
+  UnloadMusicStream(bgMusic);
 
-  CloseAudioDevice();  // Close audio device
+  CloseAudioDevice();
   CloseWindow();
   return 0;
 }
